@@ -10,10 +10,10 @@ import platform
 import os
 
 if platform.system() == "Darwin":
-	os.environ['ARCHFLAGS'] = ''
+    os.environ['ARCHFLAGS'] = ''
 
 # Try to find PCL. XXX we should only do this when trying to build or install.
-PCL_SUPPORTED = ["-1.7", "-1.6", ""]    # in order of preference
+PCL_SUPPORTED = ["-1.8", "-1.7", "-1.6", ""]  # in order of preference
 
 for pcl_version in PCL_SUPPORTED:
     if subprocess.call(['pkg-config', 'pcl_common%s' % pcl_version]) == 0:
@@ -25,9 +25,10 @@ else:
     sys.exit(1)
 
 # Find build/link options for PCL using pkg-config.
-pcl_libs = ["common", "features", "filters", "io", "kdtree", "octree",
-            "registration", "sample_consensus", "search", "segmentation",
-            "surface"]
+pcl_libs = [
+    "common", "features", "filters", "io", "kdtree", "octree", "registration",
+    "sample_consensus", "search", "segmentation", "surface"
+]
 pcl_libs = ["pcl_%s%s" % (lib, pcl_version) for lib in pcl_libs]
 
 ext_args = defaultdict(list)
@@ -37,8 +38,8 @@ ext_args['include_dirs'].append(numpy.get_include())
 def pkgconfig(flag):
     # Equivalent in Python 2.7 (but not 2.6):
     #subprocess.check_output(['pkg-config', flag] + pcl_libs).split()
-    p = subprocess.Popen(['pkg-config', flag] + pcl_libs,
-                         stdout=subprocess.PIPE)
+    p = subprocess.Popen(
+        ['pkg-config', flag] + pcl_libs, stdout=subprocess.PIPE)
     stdout, _ = p.communicate()
     # Assume no evil spaces in filenames; unsure how pkg-config would
     # handle those, anyway.
@@ -56,7 +57,9 @@ for flag in pkgconfig('--cflags-only-other'):
         ext_args['extra_compile_args'].append(flag)
 for flag in pkgconfig('--libs-only-l'):
     if flag == "-lflann_cpp-gd":
-        print("skipping -lflann_cpp-gd (see https://github.com/strawlab/python-pcl/issues/29")
+        print(
+            "skipping -lflann_cpp-gd (see https://github.com/strawlab/python-pcl/issues/29"
+        )
         continue
     ext_args['libraries'].append(flag[2:])
 for flag in pkgconfig('--libs-only-L'):
@@ -68,18 +71,23 @@ for flag in pkgconfig('--libs-only-other'):
 ext_args['define_macros'].append(
     ("EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET", "1"))
 
-setup(name='python-pcl',
-      description='pcl wrapper',
-      url='http://github.com/strawlab/python-pcl',
-      version='0.2',
-      author='John Stowers',
-      author_email='john.stowers@gmail.com',
-      license='BSD',
-      packages=["pcl"],
-      ext_modules=[Extension("pcl._pcl", ["pcl/_pcl.pyx", "pcl/minipcl.cpp"],
-                             language="c++", **ext_args),
-                   Extension("pcl.registration", ["pcl/registration.pyx"],
-                             language="c++", **ext_args),
-                  ],
-      cmdclass={'build_ext': build_ext}
-      )
+setup(
+    name='python-pcl',
+    description='pcl wrapper',
+    url='http://github.com/strawlab/python-pcl',
+    version='0.2',
+    author='John Stowers',
+    author_email='john.stowers@gmail.com',
+    license='BSD',
+    packages=["pcl"],
+    ext_modules=[
+        Extension(
+            "pcl._pcl", ["pcl/_pcl.pyx", "pcl/minipcl.cpp"],
+            language="c++",
+            **ext_args),
+        Extension(
+            "pcl.registration", ["pcl/registration.pyx"],
+            language="c++",
+            **ext_args),
+    ],
+    cmdclass={'build_ext': build_ext})
